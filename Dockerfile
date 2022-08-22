@@ -1,5 +1,9 @@
 ARG BUILD_IMAGE="rockylinux:8"
 
+############################################
+## Base Image
+############################################
+
 FROM ${BUILD_IMAGE} as BASE
 RUN > /var/log/dnf.log && \
     dnf -y update && \
@@ -7,6 +11,9 @@ RUN > /var/log/dnf.log && \
     rm -rf /var/log/* && \
     rm -rf /var/cache/dnf/*
 
+###########################################
+## Build SMTPD
+###########################################
 
 FROM BASE as BUILDER
 ARG SNMP_VERSION="5.9.3"
@@ -29,12 +36,13 @@ RUN cd "net-snmp-${SNMP_VERSION}" && \
     ../apply_patch.sh && \
     ./configure --prefix=/usr/local --disable-ipv6 --disable-snmpv1 --with-defaults && \
     make && \
-    make install && \
-    rm -rf *
+    make install
 
 #########################################################################
 # Don't forget to run docker image with: -v /proc:/host_proc
+# Copying in built images to base
 #########################################################################
+
 FROM BASE
 EXPOSE 161 161/udp
 WORKDIR /usr/local
